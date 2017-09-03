@@ -8,6 +8,9 @@ public class PlayerController : MonoBehaviour {
 
 	public static event playerStateHandler onStateChange;
 
+	public static float[] stateDelayTimer = new
+		float[(int)PlayerState._stateCount];
+
 	// Use this for initialization
 	void Start () {
 		
@@ -16,16 +19,18 @@ public class PlayerController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		float horizontal = Input.GetAxis ("Horizontal");
-
-		PlayerState newState = PlayerState.idle;
-
-		if (horizontal < 0.0f) {
-			newState = PlayerState.walkingLeft;
-		} else if (horizontal > 0.0f) {
-			newState = PlayerState.walkingRight;
+		if (onStateChange != null) {
+			if (horizontal < 0.0f) {
+				onStateChange (PlayerState.walkingLeft);
+			} else if (horizontal > 0.0f) {
+				onStateChange (PlayerState.walkingRight);
+			} else {
+				onStateChange (PlayerState.idle);
+			}
 		}
 
-		if (onStateChange != null)
-			onStateChange (newState);
+		float jump = Input.GetAxis ("Jump");
+		if (jump > 0.0f && onStateChange != null)
+			onStateChange (PlayerState.jumping);
 	}
 }

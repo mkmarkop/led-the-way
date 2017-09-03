@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class PlayerStateListener : MonoBehaviour {
 
 	public float playerWalkSpeed = 1.0f;
+	public float jumpForceHorizontal = 250f;
+	public float jumpForceVertical = 500f;
 
+	private bool onGround = true;
 	private Animator playerAnimator;
-	private PlayerState currentState = PlayerState.idle;
+	private Rigidbody2D rigidBody;
+	public PlayerState currentState = PlayerState.idle;
 
 	void OnEnable() {
 		PlayerController.onStateChange += onStateChange;
@@ -19,7 +24,9 @@ public class PlayerStateListener : MonoBehaviour {
 	}
 
 	void Start() {
+		rigidBody = GetComponent<Rigidbody2D> ();
 		playerAnimator = GetComponent<Animator> ();
+		PlayerController.stateDelayTimer [(int)PlayerState.jumping] = 1.0f;
 	}
 	
 	// Update is called once per frame
@@ -81,12 +88,27 @@ public class PlayerStateListener : MonoBehaviour {
 			break;
 
 		case PlayerState.jumping:
+			if (newState == PlayerState.landed
+				|| newState == PlayerState.falling
+			    || newState == PlayerState.killed
+			    || newState == PlayerState.actionButton)
+				isValid = true;
 			break;
 
 		case PlayerState.landed:
+			if (newState == PlayerState.idle
+			    || newState == PlayerState.walkingLeft
+			    || newState == PlayerState.walkingRight
+			    || newState == PlayerState.actionButton) {
+				isValid = true;
+			}
 			break;
 
 		case PlayerState.falling:
+			if (newState == PlayerState.landed
+			    || newState == PlayerState.killed
+			    || newState == PlayerState.actionButton)
+				isValid = true;
 			break;
 
 		case PlayerState.killed:
@@ -99,11 +121,56 @@ public class PlayerStateListener : MonoBehaviour {
 		return isValid;
 	}
 
-	void onStateChange(PlayerState newState) {
+	bool mustAbortTransition(PlayerState newState) {
+		bool abort = false;
+
+		switch (newState) {
+		case PlayerState.idle:
+			break;
+
+		case PlayerState.walkingLeft:
+			break;
+
+		case PlayerState.walkingRight:
+			break;
+
+		case PlayerState.jumping:
+			float nextAllowedJumpedTime =
+				PlayerController.stateDelayTimer [(int)PlayerState.jumping];
+
+			if (nextAllowedJumpedTime == 0.0f
+			    || nextAllowedJumpedTime > Time.time)
+				abort = true;
+			break;
+
+		case PlayerState.landed:
+			break;
+
+		case PlayerState.falling:
+			break;
+
+		case PlayerState.killed:
+			break;
+
+
+		case PlayerState.resurrect:
+			break;
+
+		case PlayerState.actionButton:
+			break;
+		}
+
+		return abort;
+	}
+
+	public void onStateChange(PlayerState newState) {
 		if (currentState == newState)
 			return;
 
 		if (!isValidTransition (newState))
+			return;
+
+		if (mustAbortTransition (newState))
 			return;
 
 		Vector3 localScale = transform.localScale;
@@ -126,8 +193,49 @@ public class PlayerStateListener : MonoBehaviour {
 			transform.localScale = localScale;
 			playerAnimator.SetBool ("isWalking", true);
 			break;
+
+		case PlayerState.jumping:
+			if (onGround) {
+				playerAnimator.SetBool ("isJumping", true);
+				float jumpDirection = 0.0f;
+				if (currentState == PlayerState.walkingLeft)
+					jumpDirection = -1.0f;
+				else if (currentState == PlayerState.walkingRight)
+					jumpDirection = 1.0f;
+				else
+					jumpDirection = 0.0f;
+
+				// apply the force
+				//rigidBody.AddForce (new Vector2 (jumpDirection *
+				//jumpForceHorizontal, jumpForceVertical));
+				StartCoroutine(DelayedJump(0.2f, jumpDirection));
+				onGround = false;
+				// disable jumping
+				PlayerController.stateDelayTimer [
+					(int)PlayerState.jumping] = 0f;
+			}
+			break;
+
+		case PlayerState.landed:
+			onGround = true;
+			PlayerController.stateDelayTimer [
+				(int)PlayerState.jumping] = Time.time + 0.1f;
+			break;
+
+		case PlayerState.falling:
+			playerAnimator.SetBool ("isJumping", false);
+			PlayerController.stateDelayTimer [
+				(int)PlayerState.jumping] = 0f;
+			break;
 		}
 		
 		currentState = newState;
+	}
+
+	IEnumerator DelayedJump(float time, float jumpDirection) {
+		yield return new WaitForSeconds (time);
+
+		rigidBody.AddForce (new Vector2 (jumpDirection *
+		jumpForceHorizontal, jumpForceVertical));
 	}
 }

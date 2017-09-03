@@ -1,11 +1,13 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\CameraController.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\FlameController.cs">
     <Files>
-      <File FileName="Assets\Scripts\PlayerController.cs" Line="32" Column="1" />
-      <File FileName="Assets\Scripts\PlayerStates.cs" Line="10" Column="15" />
-      <File FileName="Assets\Scripts\PlayerStateListener.cs" Line="103" Column="32" />
-      <File FileName="Assets\Scripts\CameraController.cs" Line="22" Column="3" />
+      <File FileName="Assets\Scripts\PlayerController.cs" Line="12" Column="39" />
+      <File FileName="Assets\Scripts\PlayerStates.cs" Line="9" Column="12" />
+      <File FileName="Assets\Scripts\PlayerStateListener.cs" Line="107" Column="23" />
+      <File FileName="Assets\Scripts\PlayerColliderListener.cs" Line="22" Column="10" />
+      <File FileName="Assets\Scripts\FlameController.cs" Line="45" Column="49" NotebookId="1" />
+      <File FileName="Assets\Scripts\FlameColliderListener.cs" Line="23" Column="5" NotebookId="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

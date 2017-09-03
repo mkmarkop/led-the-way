@@ -58,6 +58,10 @@ public class CameraController : MonoBehaviour {
 		case PlayerState.jumping:
 			trackPlayer ();
 			break;
+
+		case PlayerState.falling:
+			trackPlayer ();
+			break;
 		}
 	}
 

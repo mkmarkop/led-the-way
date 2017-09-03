@@ -52,6 +52,10 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\CameraController.cs" />
+     <Compile Include="Assets\Scripts\FitColliderToChildren.cs" />
+     <Compile Include="Assets\Scripts\FlameColliderListener.cs" />
+     <Compile Include="Assets\Scripts\FlameController.cs" />
+     <Compile Include="Assets\Scripts\PlayerColliderListener.cs" />
      <Compile Include="Assets\Scripts\PlayerController.cs" />
      <Compile Include="Assets\Scripts\PlayerStateListener.cs" />
      <Compile Include="Assets\Scripts\PlayerStates.cs" />
