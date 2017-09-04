@@ -185,6 +185,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baba98e31398a544abdd531552126c77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  targetToFollow: {fileID: 0}
   jumpForceHorizontal: 25
   jumpForceVertical: 125
   onGround: 0

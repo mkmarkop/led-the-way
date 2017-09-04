@@ -32,7 +32,7 @@ public class CameraController : MonoBehaviour {
 		lastTargetPosition = startTargPos;
 		currTargetPosition = startTargPos;
 	}
-	
+
 	// Update is called once per frame
 	void LateUpdate () {
 		onStateCycle ();
@@ -70,10 +70,10 @@ public class CameraController : MonoBehaviour {
 		Vector3 playerPos = playerTransform.position;
 
 		if (cameraPos.x == playerPos.x
-		    && cameraPos.y == playerPos.y) {
+			&& cameraPos.y == playerPos.y) {
 
 			currLerpDistance = 1.0f; // stop tracking, we're directly
-									// above the player
+			// above the player
 			currTargetPosition = cameraPos;
 			lastTargetPosition = cameraPos;
 		}

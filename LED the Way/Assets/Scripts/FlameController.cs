@@ -5,6 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class FlameController : MonoBehaviour {
 
+	public Transform targetToFollow;
+
 	public float jumpForceHorizontal = 25f;
 	public float jumpForceVertical = 125f;
 
@@ -101,6 +103,20 @@ public class FlameController : MonoBehaviour {
 
 		case flameStates.landed:
 			onGround = true;
+
+			Vector3 localScale = transform.localScale;
+
+			if (targetToFollow.position.x <
+			    transform.position.x) {
+				jumpDirection = -1.0f;
+				localScale.x = 1.0f;
+			} else if (targetToFollow.position.x >
+			           transform.position.x) {
+				jumpDirection = 1.0f;
+				localScale.x = -1.0f;
+			}
+
+			transform.localScale = localScale;
 			break;
 
 		case flameStates.falling:
