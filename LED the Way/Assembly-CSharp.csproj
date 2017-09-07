@@ -61,10 +61,13 @@
      <Compile Include="Assets\Scripts\Lightning\CloudScript.cs" />
      <Compile Include="Assets\Scripts\Lightning\LightningBolt.cs" />
      <Compile Include="Assets\Scripts\Lightning\Line.cs" />
+     <Compile Include="Assets\Scripts\Player\DamageTriggerScript.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerColliderListener.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerController.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerHealthListener.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerStateListener.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerStates.cs" />
+     <None Include="Assets\Fonts\Anton\OFL.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

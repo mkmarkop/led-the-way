@@ -10,6 +10,13 @@ public class PlayerStateListener : MonoBehaviour {
 	public float jumpForceHorizontal = 250f;
 	public float jumpForceVertical = 500f;
 
+	public const int MAX_HEALTH = 6;
+	private int currentHealth = 6;
+	public delegate void playerHealthHandler (int newHealth);
+	public static event playerHealthHandler onReceiveDamage;
+
+	private const float INVULNERABLE_TIME = 2.5f;
+
 	private bool onGround = true;
 	private Animator playerAnimator;
 	private Rigidbody2D rigidBody;
@@ -27,6 +34,7 @@ public class PlayerStateListener : MonoBehaviour {
 		rigidBody = GetComponent<Rigidbody2D> ();
 		playerAnimator = GetComponent<Animator> ();
 		PlayerController.stateDelayTimer [(int)PlayerState.jumping] = 1.0f;
+		PlayerController.stateDelayTimer [(int)PlayerState.hurt] = 1.0f;
 	}
 	
 	// Update is called once per frame
@@ -60,6 +68,12 @@ public class PlayerStateListener : MonoBehaviour {
 		case PlayerState.falling:
 			break;
 
+		case PlayerState.hurt:
+			break;
+
+		case PlayerState.recover:
+			break;
+
 		case PlayerState.killed:
 			break;
 
@@ -91,7 +105,9 @@ public class PlayerStateListener : MonoBehaviour {
 			if (newState == PlayerState.landed
 				|| newState == PlayerState.falling
 			    || newState == PlayerState.killed
-			    || newState == PlayerState.actionButton)
+			    || newState == PlayerState.actionButton
+				|| newState == PlayerState.recover
+				|| newState == PlayerState.hurt)
 				isValid = true;
 			break;
 
@@ -99,16 +115,29 @@ public class PlayerStateListener : MonoBehaviour {
 			if (newState == PlayerState.idle
 			    || newState == PlayerState.walkingLeft
 			    || newState == PlayerState.walkingRight
-			    || newState == PlayerState.actionButton) {
+			    || newState == PlayerState.actionButton
+				|| newState == PlayerState.hurt
+				|| newState == PlayerState.recover) {
 				isValid = true;
 			}
 			break;
 
+		// From falling go to landed
 		case PlayerState.falling:
 			if (newState == PlayerState.landed
 			    || newState == PlayerState.killed
+				|| newState == PlayerState.hurt
+				|| newState == PlayerState.recover
 			    || newState == PlayerState.actionButton)
 				isValid = true;
+			break;
+
+		case PlayerState.hurt:
+			isValid = true;
+			break;
+
+		case PlayerState.recover:
+			isValid = true;
 			break;
 
 		case PlayerState.killed:
@@ -149,9 +178,20 @@ public class PlayerStateListener : MonoBehaviour {
 		case PlayerState.falling:
 			break;
 
-		case PlayerState.killed:
+		case PlayerState.hurt:
+			float nextAllowedHurtTime =
+				PlayerController.stateDelayTimer [(int)PlayerState.hurt];
+
+			if (nextAllowedHurtTime == 0.0f
+			    || nextAllowedHurtTime > Time.time)
+				abort = true;
 			break;
 
+		case PlayerState.recover:
+			break;
+
+		case PlayerState.killed:
+			break;
 
 		case PlayerState.resurrect:
 			break;
@@ -164,14 +204,19 @@ public class PlayerStateListener : MonoBehaviour {
 	}
 
 	public void onStateChange(PlayerState newState) {
+
 		if (currentState == newState)
 			return;
 
-		if (!isValidTransition (newState))
+		if (!isValidTransition (newState)) {
+			//Debug.Log (currentState + " -//-> " + newState);
 			return;
+		}
 
-		if (mustAbortTransition (newState))
+		if (mustAbortTransition (newState)) {
+			//Debug.Log("/!\\" + newState);
 			return;
+		}
 
 		Vector3 localScale = transform.localScale;
 
@@ -227,6 +272,32 @@ public class PlayerStateListener : MonoBehaviour {
 			PlayerController.stateDelayTimer [
 				(int)PlayerState.jumping] = 0f;
 			break;
+
+		case PlayerState.hurt:
+			currentHealth--;
+			if (onReceiveDamage != null)
+				onReceiveDamage (currentHealth);
+
+			PlayerController.stateDelayTimer [(int)PlayerState.hurt] =
+				Time.time + INVULNERABLE_TIME;
+
+			playerAnimator.SetLayerWeight (1, 1f);
+			StartCoroutine (FinishRecovery());
+			break;
+
+		case PlayerState.recover:
+			playerAnimator.SetLayerWeight (1, 0f);
+			break;
+
+		case PlayerState.killed:
+			playerAnimator.SetLayerWeight (1, 0f);
+			break;
+
+		case PlayerState.resurrect:
+			break;
+
+		case PlayerState.actionButton:
+			break;
 		}
 		
 		currentState = newState;
@@ -237,5 +308,21 @@ public class PlayerStateListener : MonoBehaviour {
 
 		rigidBody.AddForce (new Vector2 (jumpDirection *
 		jumpForceHorizontal, jumpForceVertical));
+
+		yield return null;
+	}
+
+	IEnumerator	FinishRecovery() {
+		yield return new WaitForSeconds (INVULNERABLE_TIME);
+		onStateChange (PlayerState.recover);
+		yield return null;
+	}
+
+	public void hitDamageTrigger() {
+		if (currentHealth <= 0) {
+			onStateChange (PlayerState.killed);
+		} else {
+			onStateChange (PlayerState.hurt);
+		}
 	}
 }

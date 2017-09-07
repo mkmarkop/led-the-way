@@ -5,6 +5,8 @@
 	jumping,
 	landed,
 	falling,
+	hurt,
+	recover,
 	killed,
 	resurrect,
 	actionButton,
