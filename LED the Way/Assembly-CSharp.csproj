@@ -51,16 +51,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\CameraController.cs" />
-     <Compile Include="Assets\Scripts\CavemanColliderListener.cs" />
-     <Compile Include="Assets\Scripts\CavemanController.cs" />
+     <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
+     <Compile Include="Assets\Scripts\Caveman\CavemanColliderListener.cs" />
+     <Compile Include="Assets\Scripts\Caveman\CavemanController.cs" />
      <Compile Include="Assets\Scripts\FitColliderToChildren.cs" />
-     <Compile Include="Assets\Scripts\FlameColliderListener.cs" />
-     <Compile Include="Assets\Scripts\FlameController.cs" />
-     <Compile Include="Assets\Scripts\PlayerColliderListener.cs" />
-     <Compile Include="Assets\Scripts\PlayerController.cs" />
-     <Compile Include="Assets\Scripts\PlayerStateListener.cs" />
-     <Compile Include="Assets\Scripts\PlayerStates.cs" />
+     <Compile Include="Assets\Scripts\Flame\FlameColliderListener.cs" />
+     <Compile Include="Assets\Scripts\Flame\FlameController.cs" />
+     <Compile Include="Assets\Scripts\Lightning\BranchLightning.cs" />
+     <Compile Include="Assets\Scripts\Lightning\CloudScript.cs" />
+     <Compile Include="Assets\Scripts\Lightning\LightningBolt.cs" />
+     <Compile Include="Assets\Scripts\Lightning\Line.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerColliderListener.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerController.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerStateListener.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerStates.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
