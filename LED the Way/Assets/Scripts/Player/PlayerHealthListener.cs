@@ -6,16 +6,16 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Image))]
 public class PlayerHealthListener : MonoBehaviour {
 
-	public Sprite[] batteryImages = new Sprite[PlayerStateListener.MAX_HEALTH + 1];
+	public Sprite[] batteryImages = new Sprite[PlayerStateMachine.MAX_HEALTH + 1];
 
 	private Image image;
 
 	void OnEnable() {
-		PlayerStateListener.onReceiveDamage += onHealthChange;
+		PlayerStateMachine.onReceiveDamage += onHealthChange;
 	}
 
 	void OnDisable() {
-		PlayerStateListener.onReceiveDamage -= onHealthChange;
+		PlayerStateMachine.onReceiveDamage -= onHealthChange;
 	}
 
 	void Awake() {

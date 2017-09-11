@@ -2,6 +2,8 @@
 	idle = 0,
 	walkingLeft,
 	walkingRight,
+	glidingLeft,
+	glidingRight,
 	jumping,
 	landed,
 	falling,

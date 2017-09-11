@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour {
 
+	public BoxCollider2D cameraBounds;
+
 	public Transform playerTransform;
 
 	public float trackingSpeed = 0.2f;
@@ -14,11 +16,11 @@ public class CameraController : MonoBehaviour {
 	private PlayerState currentPlayerState = PlayerState.idle;
 
 	void OnEnable() {
-		PlayerController.onStateChange += onStateChange;
+		PlayerStateMachine.onStateChange += onStateChange;
 	}
 
 	void OnDisable() {
-		PlayerController.onStateChange -= onStateChange;
+		PlayerStateMachine.onStateChange -= onStateChange;
 	}
 
 	// Use this for initialization
@@ -41,8 +43,14 @@ public class CameraController : MonoBehaviour {
 		// distance from camera to player
 		currLerpDistance = Mathf.Clamp (trackingSpeed + currLerpDistance,
 			0.0f, 1.0f);
+
+		Vector3 prevPosition = transform.position;
 		transform.position = Vector3.Lerp (lastTargetPosition,
 			currTargetPosition, currLerpDistance);
+
+		if (!cameraBounds.bounds.ContainsBounds (Camera.main.OrthographicBounds ())) {
+			transform.position = prevPosition;
+		}
 	}
 
 	void onStateCycle() {
@@ -55,6 +63,14 @@ public class CameraController : MonoBehaviour {
 			trackPlayer ();
 			break;
 
+		case PlayerState.glidingLeft:
+			trackPlayer ();
+			break;
+
+		case PlayerState.glidingRight:
+			trackPlayer ();
+			break;
+
 		case PlayerState.jumping:
 			trackPlayer ();
 			break;
@@ -62,7 +78,12 @@ public class CameraController : MonoBehaviour {
 		case PlayerState.falling:
 			trackPlayer ();
 			break;
+
+		case PlayerState.landed:
+			trackPlayer ();
+			break;
 		}
+
 	}
 
 	void trackPlayer() {

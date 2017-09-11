@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(BoxCollider2D))]
 public class DamageTriggerScript : MonoBehaviour {
 
+	public int damageAmount = 1;
+
 	void OnTriggerEnter2D(Collider2D objectEntering) {
-		objectEntering.SendMessage ("hitDamageTrigger",
+		objectEntering.SendMessage ("hitDamageTrigger", damageAmount,
 			SendMessageOptions.DontRequireReceiver);
 	}
 }
