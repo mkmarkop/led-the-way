@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class FlameController : MonoBehaviour {
 
+	public Slider healthBar;
 	public Transform targetToFollow;
 
 	public float jumpForceHorizontal = 25f;
@@ -17,11 +19,20 @@ public class FlameController : MonoBehaviour {
 	public float jumpWaitDelay = 0.75f;
 	public float timeForNextJump = 0.0f;
 
+	private bool canJump = false;
+
+	private int maxHealth = 2;
+	private int health = 2;
+
 	public enum flameStates {
 		inactive = 0,
 		jumping,
 		landed,
 		falling,
+		hurt,
+		killed,
+		playerSighted,
+		playerOutOfSight,
 		_stateCount
 	}
 
@@ -30,6 +41,9 @@ public class FlameController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		rigidBody = GetComponent<Rigidbody2D> ();
+		healthBar.minValue = 0;
+		healthBar.maxValue = maxHealth;
+		healthBar.value = health;
 	}
 	
 	// Update is called once per frame
@@ -42,15 +56,25 @@ public class FlameController : MonoBehaviour {
 			break;
 
 		case flameStates.landed:
-			if (timeForNextJump == 0.0f) {
-				timeForNextJump = Time.time +
-					jumpWaitDelay + Random.Range(-0.15f, 0.15f);
-			} else if (timeForNextJump < Time.time) {
-				onStateChange (flameStates.jumping);
+			if (canJump) {
+				if (timeForNextJump == 0.0f) {
+					timeForNextJump = Time.time +
+					jumpWaitDelay + Random.Range (-0.15f, 0.15f);
+				} else if (timeForNextJump < Time.time) {
+					onStateChange (flameStates.jumping);
+				}
 			}
 			break;
 
 		case flameStates.falling:
+			break;
+
+		case flameStates.playerSighted:
+			onStateChange (flameStates.landed);
+			break;
+
+		case flameStates.playerOutOfSight:
+			onStateChange (flameStates.inactive);
 			break;
 		}
 	}
@@ -59,6 +83,17 @@ public class FlameController : MonoBehaviour {
 		bool isValid = false;
 
 		switch (currentState) {
+		case flameStates.playerOutOfSight:
+			if (currentState != flameStates.jumping)
+				isValid = true;
+			else
+				isValid = false;
+			break;
+
+		case flameStates.playerSighted:
+			isValid = true;
+			break;
+			
 		case flameStates.inactive:
 			isValid = true;
 			break;
@@ -78,6 +113,14 @@ public class FlameController : MonoBehaviour {
 		case flameStates.falling:
 			if (newState == flameStates.landed)
 				isValid = true;
+			break;
+				
+		case flameStates.hurt:
+			isValid = true;
+			break;
+
+		case flameStates.killed:
+			isValid = false;
 			break;
 		}
 
@@ -121,8 +164,34 @@ public class FlameController : MonoBehaviour {
 
 		case flameStates.falling:
 			break;
+
+		case flameStates.hurt:
+			health--;
+			healthBar.value = health;
+			if (health <= 0)
+				onStateChange (flameStates.killed);
+			else
+				onStateChange(currentState);
+			return;
+			break;
+
+		case flameStates.killed:
+			Destroy (gameObject, 0.1f);
+			break;
+
+		case flameStates.playerSighted:
+			canJump = true;
+			break;
+
+		case flameStates.playerOutOfSight:
+			canJump = false;
+			break;
 		}
 
 		currentState = newState;
+	}
+
+	public void hitByBullet() {
+		onStateChange (flameStates.hurt);
 	}
 }

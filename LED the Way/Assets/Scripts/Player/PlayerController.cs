@@ -5,6 +5,15 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider2D))]
 public class PlayerController : MonoBehaviour {
 
+	public Transform shootingPoint;
+	public BoxCollider2D gameBoundaries;
+	public PlayerStateMachine playerStateMachine;
+
+	public static float[] stateDelayTimer = new
+		float[(int)PlayerState._stateCount];
+
+	public Vector3 Velocity { get; private set; }
+
 	float velocityXSmoothing;
 	float accelerationTimeAirborne = .2f;
 	float accelerationTimeGrounded = .1f;
@@ -14,17 +23,9 @@ public class PlayerController : MonoBehaviour {
 	float jumpVelocity = 8f;
 
 	public LayerMask collisionMask;
-
-	public delegate void playerStateHandler(PlayerState newState);
-
-	public static event playerStateHandler onStateChangeTry;
-
-	public static float[] stateDelayTimer = new
-		float[(int)PlayerState._stateCount];
-
 	const float skinWidth = .02f;
 	RaycastOrigins raycastOrigins;
-	public CollisionInfo collisions;
+	CollisionInfo collisions;
 	BoxCollider2D collider;
 
 	public int horizontalRayCount = 4;
@@ -33,18 +34,31 @@ public class PlayerController : MonoBehaviour {
 	float horizontalRaySpacing;
 	float verticalRaySpacing;
 
-	Vector3 velocity;
 	float gravity = -20f;
+	Vector3 _velocity;
 
 	struct RaycastOrigins {
 		public Vector2 topLeft, topRight;
 		public Vector2 bottomLeft, bottomRight;
 	}
 
-	// Use this for initialization
-	void Start () {
+	struct CollisionInfo {
+		public bool above, below;
+		public bool left, right;
+		public void Reset() {
+			above = below = false;
+			left = right = false;
+		}
+	}
+
+	void Start() {
 		collider = GetComponent<BoxCollider2D> ();
 		CalculateRaySpacing ();
+
+		shootingPoint.transform.position = new Vector3 (
+			shootingPoint.transform.position.x,
+			collider.transform.position.y + collider.offset.y,
+			shootingPoint.transform.position.y);
 
 		gravity = -(2 * jumpHeight) / Mathf.Pow (timeToJumpApex, 2f);
 		jumpVelocity = Mathf.Abs (gravity) * timeToJumpApex;
@@ -106,41 +120,82 @@ public class PlayerController : MonoBehaviour {
 		if (movement.y != 0)
 			VerticalCollisions (ref movement);
 
-		transform.Translate (movement);
+		transform.Translate (movement);	
 	}
 
 	void Update() {
 		if (collisions.above || collisions.below)
-			velocity.y = 0;
+			_velocity.y = 0;
 		if (collisions.left || collisions.right)
-			velocity.x = 0;
+			_velocity.x = 0;
 
-		velocity.y += gravity * Time.deltaTime;
+		if (collisions.below)
+			playerStateMachine.onStateChangeTry (PlayerState.landed);
+		else
+			playerStateMachine.onStateChangeTry (PlayerState.falling);
+
+		_velocity.y += gravity * Time.deltaTime;
 
 		float horizontal = Input.GetAxis ("Horizontal");
-		if (onStateChangeTry != null) {
-			if (horizontal < 0.0f) {
-				onStateChangeTry (PlayerState.walkingLeft);
-			} else if (horizontal > 0.0f) {
-				onStateChangeTry (PlayerState.walkingRight);
-			} else {
-				onStateChangeTry (PlayerState.idle);
-				velocity.x = 0f;
-			}
+		if (horizontal == 0) {
+			_velocity.x = 0f;
+			playerStateMachine.onStateChangeTry (PlayerState.idle);
+		} else if (horizontal < 0f) {
+			playerStateMachine.onStateChangeTry (PlayerState.walkingLeft);
+		} else if (horizontal > 0f) {
+			playerStateMachine.onStateChangeTry (PlayerState.walkingRight);
 		}
 
 		float jump = Input.GetAxis ("Jump");
-
 		if (jump > 0.0f && collisions.below) {
-			velocity.y = jumpVelocity;
+			_velocity.y = jumpVelocity;
+			playerStateMachine.onStateChangeTry (PlayerState.jumping);
 		}
 
-		if (jump > 0.0f && onStateChangeTry != null)
-			onStateChangeTry (PlayerState.jumping);
-
-		velocity.x = Mathf.SmoothDamp (velocity.x, horizontal * 1f, ref velocityXSmoothing,
+		_velocity.x = Mathf.SmoothDamp (
+			_velocity.x, horizontal * 1f, ref velocityXSmoothing,
 			(collisions.below) ? accelerationTimeGrounded : accelerationTimeAirborne);
-		Move (velocity * Time.deltaTime);
+		
+		Move (_velocity * Time.deltaTime);
+
+		if (!gameBoundaries.bounds.ContainsBounds (collider.bounds)) {
+			playerStateMachine.onStateChangeTry (PlayerState.killed);
+		}
+
+		Aim ();
+
+		float fire = Input.GetAxis ("Fire1");
+		if (fire != 0.0f) {
+			playerStateMachine.onStateChangeTry (PlayerState.actionButton);
+		}
+	}
+
+	void Aim() {
+		Vector3 rotationPivot = collider.transform.position + new Vector3(collider.offset.x, collider.offset.y, 0);
+
+		Vector3 rotationAxis = new Vector3 (0, 0, 1);
+		Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+		Vector3 fromVector = (shootingPoint.position - rotationPivot);
+		fromVector.Scale (new Vector3 (1f, 1f, 0f));
+		Vector3 toVector = (mousePosition - rotationPivot);
+		toVector.Scale (new Vector3 (1f, 1f, 0f));
+
+		float mouseAngle = Mathf.Atan2 (toVector.y, toVector.x) * Mathf.Rad2Deg;
+
+		if (transform.localScale.x > 0) {
+			if (mouseAngle > 90 || mouseAngle < -25)
+				return;
+		} else {
+			if (mouseAngle < 0)
+				mouseAngle += 360f;
+			if (mouseAngle < 90 || mouseAngle > 205)
+				return;
+		}
+
+		float rotationAngle = Quaternion.FromToRotation (fromVector, toVector).eulerAngles.z;
+
+		shootingPoint.RotateAround (rotationPivot, rotationAxis, rotationAngle);
 	}
 
 	void UpdateRaycastOrigins() {
@@ -164,10 +219,7 @@ public class PlayerController : MonoBehaviour {
 		verticalRaySpacing = bounds.size.x / (verticalRayCount - 1);
 	}
 
-	public struct CollisionInfo {
-		public bool above, below, left, right;
-		public void Reset() {
-			above = below = left = right = false;
-		}
+	public void ResetVelocity() {
+		Velocity = Vector3.zero;
 	}
 }

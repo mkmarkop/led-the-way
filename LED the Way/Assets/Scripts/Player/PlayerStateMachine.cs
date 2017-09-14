@@ -5,13 +5,13 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public class PlayerStateMachine : MonoBehaviour {
 
-	public float playerWalkSpeed = 1.0f;
-	public float jumpForceHorizontal = 250f;
-	public float jumpForceVertical = 500f;
-	public float playerGlideSpeed = 7f;
+	public PlayerController playerController;
+	public GameObject bulletPrefab;
+	public Transform shootingPoint;
 
+	private int damageTaken = 0;
 	private int currentHealth = 6;
-	public const int MAX_HEALTH = 6;
+	public const int MaxHealth = 6;
 	public static event playerHealthHandler onReceiveDamage;
 	public delegate void playerHealthHandler (int newHealth);
 
@@ -24,76 +24,29 @@ public class PlayerStateMachine : MonoBehaviour {
 	private Animator playerAnimator;
 	public PlayerState currentState = PlayerState.idle;
 
+	private Vector3 respawnPoint;
+
 	void OnEnable() {
-		PlayerController.onStateChangeTry += onStateChangeTry;
+		CheckpointTriggerScript.onCheckpointPassed += onCheckpointPassed;
 	}
 
 	void OnDisable() {
-		PlayerController.onStateChangeTry -= onStateChangeTry;
+		CheckpointTriggerScript.onCheckpointPassed -= onCheckpointPassed;
 	}
 
 	void Start() {
 		playerAnimator = GetComponent<Animator> ();
+		PlayerController.stateDelayTimer [(int)PlayerState.actionButton] = 1.0f;
 		PlayerController.stateDelayTimer [(int)PlayerState.jumping] = 1.0f;
 		PlayerController.stateDelayTimer [(int)PlayerState.hurt] = 1.0f;
 
+		respawnPoint = transform.position;
 		onStateChangeTry (PlayerState.falling);
 	}
 	
 	// Update is called once per frame
-	void Update () {
-		switch (currentState) {
-		case PlayerState.idle:
-			break;
-
-		case PlayerState.walkingLeft:
-			transform.Translate (new Vector3 (
-				(playerWalkSpeed * -1.0f) * Time.deltaTime,
-				0f, 0f));
-			break;
-
-		case PlayerState.walkingRight:
-			transform.Translate (new Vector3 (
-				(playerWalkSpeed * 1.0f) * Time.deltaTime,
-				0f, 0f));
-			break;
-
-		case PlayerState.glidingLeft:
-			transform.Translate (new Vector3 (
-				(playerGlideSpeed * -1.0f) * Time.deltaTime,
-				0f, 0f));
-			break;
-
-		case PlayerState.glidingRight:
-			transform.Translate (new Vector3 (
-				(playerGlideSpeed * 1.0f) * Time.deltaTime,
-				0f, 0f));
-			break;
-
-		case PlayerState.actionButton:
-			break;
-
-		case PlayerState.jumping:
-			break;
-
-		case PlayerState.landed:
-			break;
-
-		case PlayerState.falling:
-			break;
-
-		case PlayerState.hurt:
-			break;
-
-		case PlayerState.recover:
-			break;
-
-		case PlayerState.killed:
-			break;
-
-		case PlayerState.resurrect:
-			break;
-		}
+	public void onStateCycle (float time) {
+		
 	}
 	 
 	bool isValidTransition(PlayerState newState) {
@@ -135,6 +88,7 @@ public class PlayerStateMachine : MonoBehaviour {
 			break;
 
 		case PlayerState.actionButton:
+			isValid = true;
 			break;
 
 		case PlayerState.jumping:
@@ -155,6 +109,7 @@ public class PlayerStateMachine : MonoBehaviour {
 			    || newState == PlayerState.walkingRight
 			    || newState == PlayerState.actionButton
 				|| newState == PlayerState.hurt
+				|| newState == PlayerState.killed
 				|| newState == PlayerState.recover) {
 				isValid = true;
 			}
@@ -181,9 +136,17 @@ public class PlayerStateMachine : MonoBehaviour {
 			break;
 
 		case PlayerState.killed:
+			if (newState == PlayerState.resurrect)
+				isValid = true;
+			else
+				isValid = false;
 			break;
 
 		case PlayerState.resurrect:
+			if (newState == PlayerState.idle)
+				isValid = true;
+			else
+				isValid = false;
 			break;
 		}
 
@@ -243,6 +206,12 @@ public class PlayerStateMachine : MonoBehaviour {
 			break;
 
 		case PlayerState.actionButton:
+			float nextAllowedFireTime =
+				PlayerController.stateDelayTimer [(int)PlayerState.actionButton];
+
+			if (nextAllowedFireTime == 0.0f
+			    || nextAllowedFireTime > Time.time)
+				abort = true;
 			break;
 		}
 
@@ -350,7 +319,7 @@ public class PlayerStateMachine : MonoBehaviour {
 
 		case PlayerState.jumping:
 			if (onGround) {
-				playerAnimator.SetBool ("isJumping", true);
+				playerAnimator.SetBool ("444", true);
 				float jumpDirection = 0.0f;
 				if (currentState == PlayerState.walkingLeft)
 					jumpDirection = -1.0f;
@@ -383,14 +352,21 @@ public class PlayerStateMachine : MonoBehaviour {
 			break;
 
 		case PlayerState.hurt:
+			currentHealth -= damageTaken;
+			damageTaken = 0;
+
 			if (onReceiveDamage != null)
 				onReceiveDamage (currentHealth);
 
 			PlayerController.stateDelayTimer [(int)PlayerState.hurt] =
 				Time.time + INVULNERABLE_TIME;
 
-			playerAnimator.SetLayerWeight (1, 1f);
-			StartCoroutine (FinishRecovery());
+			if (currentHealth > 0) {
+				playerAnimator.SetLayerWeight (1, 1f);
+				StartCoroutine (FinishRecovery ());
+			} else {
+				onStateChangeTry (PlayerState.killed);
+			}
 			break;
 
 		case PlayerState.recover:
@@ -402,18 +378,39 @@ public class PlayerStateMachine : MonoBehaviour {
 				onReceiveDamage (currentHealth);
 			
 			playerAnimator.SetLayerWeight (1, 0f);
+
+			PlayerController.stateDelayTimer [(int)PlayerState.hurt] =
+				Time.time + INVULNERABLE_TIME;
+
+			playerAnimator.SetLayerWeight (1, 1f);
+			StartCoroutine (FinishRecovery ());
 			break;
 
 		case PlayerState.resurrect:
+			currentHealth = MaxHealth;
+			transform.position = respawnPoint;
+			transform.rotation = Quaternion.identity;
+			playerController.ResetVelocity ();
+			onReceiveDamage (currentHealth);
 			break;
 
 		case PlayerState.actionButton:
+			PlayerController.stateDelayTimer [
+				(int)PlayerState.actionButton] = Time.time + .5f;
+
+			GameObject newBullet = Instantiate (bulletPrefab);
+			PlayerBulletController pbc = newBullet.GetComponent<PlayerBulletController> ();
+			newBullet.transform.position = shootingPoint.position;
+			pbc.Launch (transform.localScale.x, shootingPoint.rotation.eulerAngles.z);
 			break;
 		}
 
 		currentState = newState;
 		if (PlayerStateMachine.onStateChange != null)
 			PlayerStateMachine.onStateChange (currentState);
+
+		if (currentState == PlayerState.killed)
+			onStateChangeTry (PlayerState.resurrect);
 	}
 
 	IEnumerator DelayedJump(float time, float jumpDirection) {
@@ -432,14 +429,15 @@ public class PlayerStateMachine : MonoBehaviour {
 	}
 
 	public void hitDamageTrigger(int amount) {
-		currentHealth = currentHealth - amount;
-		if (currentHealth < 0)
-			currentHealth = 0;
-		
 		if (currentHealth <= 0) {
 			onStateChangeTry (PlayerState.killed);
 		} else {
+			damageTaken = amount;
 			onStateChangeTry (PlayerState.hurt);
 		}
+	}
+
+	void onCheckpointPassed(Vector3 position) {
+		respawnPoint = position;
 	}
 }

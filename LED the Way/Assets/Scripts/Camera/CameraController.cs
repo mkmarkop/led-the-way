@@ -55,6 +55,10 @@ public class CameraController : MonoBehaviour {
 
 	void onStateCycle() {
 		switch (currentPlayerState) {
+		case PlayerState.idle:
+			trackPlayer ();
+			break;
+
 		case PlayerState.walkingLeft:
 			trackPlayer ();
 			break;

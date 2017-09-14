@@ -5,7 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(MeshRenderer))]
 public class ScrollUV : MonoBehaviour {
 
-	public float scrollingSpeed = 0.25f;
+	public float horizontalScrollingSpeed = 0.25f;
+	public float verticalScrollingSpeed = 0.05f;
 
 	private Material meshMaterial;
 	private MeshRenderer meshRenderer;
@@ -31,22 +32,22 @@ public class ScrollUV : MonoBehaviour {
 
 		switch (currentState) {
 		case PlayerState.walkingLeft:
-			movement = new Vector2 (-Time.fixedDeltaTime * scrollingSpeed * 0.5f, 0);
+			movement = new Vector2 (-Time.deltaTime * horizontalScrollingSpeed * 0.5f, 0);
 			meshMaterial.mainTextureOffset = offset + movement;
 			break;
 
 		case PlayerState.walkingRight:
-			movement = new Vector2 (+Time.fixedDeltaTime * scrollingSpeed * 0.5f, 0);
+			movement = new Vector2 (+Time.deltaTime * horizontalScrollingSpeed * 0.5f, 0);
 			meshMaterial.mainTextureOffset = offset + movement;
 			break;
 
 		case PlayerState.glidingLeft:
-			movement = new Vector2 (-Time.fixedDeltaTime * scrollingSpeed * 0.5f, 0);
+			movement = new Vector2 (-Time.deltaTime * horizontalScrollingSpeed * 0.5f, 0);
 			meshMaterial.mainTextureOffset = offset + movement;
 			break;
 
 		case PlayerState.glidingRight:
-			movement = new Vector2 (+Time.fixedDeltaTime * scrollingSpeed * 0.5f, 0);
+			movement = new Vector2 (+Time.deltaTime * horizontalScrollingSpeed * 0.5f, 0);
 			meshMaterial.mainTextureOffset = offset + movement;
 			break;
 		}
