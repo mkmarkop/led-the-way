@@ -14,12 +14,14 @@ public class PlayerController : MonoBehaviour {
 
 	public Vector3 Velocity { get; private set; }
 
-	float velocityXSmoothing;
-	float accelerationTimeAirborne = .2f;
-	float accelerationTimeGrounded = .1f;
+	float walkingSpeed = 1.2f;
 
-	float jumpHeight = 1.25f;
-	float timeToJumpApex = .4f;
+	float velocityXSmoothing;
+	float accelerationTimeAirborne = .10f;
+	float accelerationTimeGrounded = .001f;
+
+	float jumpHeight = 1.5f;
+	float timeToJumpApex = .45f;
 	float jumpVelocity = 8f;
 
 	public LayerMask collisionMask;
@@ -37,6 +39,8 @@ public class PlayerController : MonoBehaviour {
 	float gravity = -20f;
 	Vector3 _velocity;
 
+	GameManager.GameState currentGameState = GameManager.GameState.unpaused;
+
 	struct RaycastOrigins {
 		public Vector2 topLeft, topRight;
 		public Vector2 bottomLeft, bottomRight;
@@ -49,6 +53,14 @@ public class PlayerController : MonoBehaviour {
 			above = below = false;
 			left = right = false;
 		}
+	}
+
+	void OnEnable() {
+		GameManager.onGameStateChange += onGameStateChange;
+	}
+
+	void OnDisable() {
+		GameManager.onGameStateChange -= onGameStateChange;
 	}
 
 	void Start() {
@@ -124,6 +136,9 @@ public class PlayerController : MonoBehaviour {
 	}
 
 	void Update() {
+		if (currentGameState == GameManager.GameState.paused)
+			return;
+		
 		if (collisions.above || collisions.below)
 			_velocity.y = 0;
 		if (collisions.left || collisions.right)
@@ -153,7 +168,7 @@ public class PlayerController : MonoBehaviour {
 		}
 
 		_velocity.x = Mathf.SmoothDamp (
-			_velocity.x, horizontal * 1f, ref velocityXSmoothing,
+			_velocity.x, horizontal * walkingSpeed, ref velocityXSmoothing,
 			(collisions.below) ? accelerationTimeGrounded : accelerationTimeAirborne);
 		
 		Move (_velocity * Time.deltaTime);
@@ -162,7 +177,7 @@ public class PlayerController : MonoBehaviour {
 			playerStateMachine.onStateChangeTry (PlayerState.killed);
 		}
 
-		Aim ();
+		Aim (horizontal);
 
 		float fire = Input.GetAxis ("Fire1");
 		if (fire != 0.0f) {
@@ -170,7 +185,7 @@ public class PlayerController : MonoBehaviour {
 		}
 	}
 
-	void Aim() {
+	void Aim(float horizontal) {
 		Vector3 rotationPivot = collider.transform.position + new Vector3(collider.offset.x, collider.offset.y, 0);
 
 		Vector3 rotationAxis = new Vector3 (0, 0, 1);
@@ -183,14 +198,22 @@ public class PlayerController : MonoBehaviour {
 
 		float mouseAngle = Mathf.Atan2 (toVector.y, toVector.x) * Mathf.Rad2Deg;
 
-		if (transform.localScale.x > 0) {
-			if (mouseAngle > 90 || mouseAngle < -25)
-				return;
-		} else {
-			if (mouseAngle < 0)
-				mouseAngle += 360f;
-			if (mouseAngle < 90 || mouseAngle > 205)
-				return;
+		if (horizontal == 0) {
+			Vector3 localScale = transform.localScale;
+			if (transform.localScale.x > 0) {
+				if (mouseAngle > 90) {
+					transform.localScale = new Vector3 (-Mathf.Abs (localScale.x),
+						localScale.y, localScale.z);
+				} else if (mouseAngle < -25)
+					return;
+			} else {
+				mouseAngle = mouseAngle < 0 ? mouseAngle + 360 : mouseAngle;
+				if (mouseAngle < 90) {
+					transform.localScale = new Vector3 (Mathf.Abs (localScale.x),
+						localScale.y, localScale.z);
+				} else if (mouseAngle > 205)
+					return;
+			}
 		}
 
 		float rotationAngle = Quaternion.FromToRotation (fromVector, toVector).eulerAngles.z;
@@ -221,5 +244,9 @@ public class PlayerController : MonoBehaviour {
 
 	public void ResetVelocity() {
 		Velocity = Vector3.zero;
+	}
+
+	void onGameStateChange(GameManager.GameState newGameState) {
+		currentGameState = newGameState;
 	}
 }

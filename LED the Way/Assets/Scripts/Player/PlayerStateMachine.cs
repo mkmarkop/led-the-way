@@ -45,7 +45,7 @@ public class PlayerStateMachine : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	public void onStateCycle (float time) {
+	public void onStateCycle () {
 		
 	}
 	 

@@ -10,6 +10,11 @@ public class CloudScript : MonoBehaviour {
 	public GameObject BranchedBoltPrefab;
 	public List<GameObject> BoltNodes;
 
+	public float timeBetweenBolts = 1.5f;
+
+	public const float MinimumHeight = 150f;
+	bool active = true;
+
 	List<GameObject> branchesObj;
 
 	void Start() {
@@ -21,16 +26,20 @@ public class CloudScript : MonoBehaviour {
 			.transform.position;
 		return new Vector2 (nodePos.x, nodePos.y);
 	}
-
+		
 	void Update() {
-		if (Input.GetMouseButtonDown (0)) {
-			Vector3 mousePos = Camera.main.ScreenToWorldPoint (Input.mousePosition);
+		if (active) {
+			Vector3 randomCoordinate = new Vector3 (Random.Range (0, Screen.width),
+				                           Random.Range (0, Screen.height - MinimumHeight), 0f);
+			Vector3 startPos = Camera.main.ScreenToWorldPoint (randomCoordinate);
 
 			GameObject branchObj = (GameObject)GameObject.Instantiate (BranchedBoltPrefab);
 			BranchLightning branchComp = branchObj.GetComponent<BranchLightning> ();
 
-			branchComp.Initialize (randomNode (), mousePos, boltThickness);
+			branchComp.Initialize (randomNode (), startPos, boltThickness);
 			branchesObj.Add (branchObj);
+			active = false;
+			StartCoroutine (ActivateCloud());
 		}
 		for (int i = branchesObj.Count - 1; i >= 0; i--) {
 			BranchLightning branchComp = branchesObj [i].GetComponent<BranchLightning> ();
@@ -44,5 +53,11 @@ public class CloudScript : MonoBehaviour {
 			branchComp.UpdateBranch ();
 			branchComp.Draw ();
 		}
+	}
+
+	IEnumerator ActivateCloud() {
+		yield return new WaitForSeconds (timeBetweenBolts + Random.Range(-0.1f, 0.3f));
+		active = true;
+		yield return null;
 	}
 }

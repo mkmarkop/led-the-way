@@ -20,7 +20,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4576697589895520}
   - component: {fileID: 61626875371116302}
-  m_Layer: 9
+  m_Layer: 0
   m_Name: CavemanEyesight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -87,7 +87,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1907620282434490}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: 0.244, z: 0}
+  m_LocalPosition: {x: 1.1690545, y: -0.65033036, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4431238519059282}
@@ -195,7 +195,7 @@ BoxCollider2D:
   m_Offset: {x: 0, y: 0.385}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0}
+    pivot: {x: 1, y: 0}
     oldSize: {x: 0.57, y: 0.77}
     newSize: {x: 0.57, y: 0.77}
     adaptiveTilingThreshold: 0.5
